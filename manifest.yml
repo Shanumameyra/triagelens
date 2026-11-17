@@ -10,7 +10,8 @@ modules:
   rovo:agent:
     - key: triagelens-guide
       name: TriageLens Guide
-      description: Answers what to work on first, who should handle an issue, and who has room for more work — from Jira and Teamwork Graph.
+      description: Answers what to work on first, who should handle an issue, and who
+        has room for more work — from Jira and Teamwork Graph.
       prompt: resource:agent-prompt;prompt.md
       conversationStarters:
         - What should I work on first?
@@ -32,9 +33,8 @@ modules:
       actionVerb: GET
       description: |
         Scores one Jira work item 0-100 with a transparent breakdown (priority, staleness,
-        age, recent comments, open blockers, linked goals, assignee load) and suggests a
-        priority and labels. Use it for "how urgent is X", "what should I work on first",
-        or "triage this issue". Leave issueKey empty to use the work item open on screen.
+        age, comments, blockers, goals, load) and suggests a priority and labels. Use for
+        "how urgent is X" or "what should I work on first". Omit issueKey to use the open item.
       inputs:
         issueKey:
           title: Work item key
@@ -54,7 +54,8 @@ modules:
           title: Work item key
           type: string
           required: false
-          description: The Jira work item key, for example PROJ-123. Leave empty to use the work item open on screen.
+          description: The Jira work item key, for example PROJ-123. Leave empty to use
+            the work item open on screen.
     - key: team-load
       name: Team workload
       function: teamLoad
@@ -68,7 +69,8 @@ modules:
       function: getIssueTriage
       actionVerb: GET
       description: >
-        Fetches a Jira issue's triage score (0-100), band, suggested priority and reasons.
+        Fetches a Jira issue's triage score (0-100), band, suggested priority
+        and reasons.
       inputs:
         issueKey:
           title: Issue key
@@ -107,5 +109,4 @@ app:
     name: nodejs24.x
     memoryMB: 256
     architecture: arm64
-  # PLACEHOLDER — replaced by `forge create` / `forge register` after Atlassian login.
-  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
+  id: ari:cloud:ecosystem::app/ed9ca922-ff9d-4d88-b208-264793a24873

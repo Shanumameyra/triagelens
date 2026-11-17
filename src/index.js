@@ -1,7 +1,7 @@
 // TriageLens — Forge backend: Jira issue panel resolver, Rovo agent actions, MCP tool.
 // Production wiring only. All testable logic lives in triage.js / twg.js / jira.js.
-import api, { route } from '@forge/api';
-import Resolver from '@forge/resolver';
+import api, { assumeTrustedRoute } from '@forge/api';
+import { makeResolver } from '@forge/resolver';
 import { createTwgClient, Q, userAri, workItemAri } from './twg.js';
 import { createJiraClient, openBlockersOf } from './jira.js';
 import { scoreIssue, suggestAssignee } from './triage.js';
@@ -9,9 +9,16 @@ import { scoreIssue, suggestAssignee } from './triage.js';
 const log = (event, data) => console.log(JSON.stringify({ triagelens: event, ...data }));
 
 // ---- transports (as the user, so results respect their own permissions) ----
-const jiraRequest = (path, options) => api.asUser().requestJira(route`${path}`, options);
+// Paths are built by our own code from validated inputs (see isValidIssueKey),
+// so they go through assumeTrustedRoute instead of the `route` tag: `route`
+// rejects any interpolated value containing '/', which a full REST path has.
+const jiraRequest = (path, options) => api.asUser().requestJira(assumeTrustedRoute(path), options);
 const twgRequest = (text, variables, operationName) =>
   api.asUser().requestTeamworkGraph(text, variables, operationName);
+
+// Jira keys look like PROJ-123. Reject anything else so a crafted key can
+// never smuggle path segments into a REST call.
+const isValidIssueKey = (key) => /^[A-Z][A-Z0-9]*-[0-9]+$/.test(key);
 
 // ---- shared triage brief: issue + comments + goals + assignee load -> score ----
 export async function buildTriageBrief({ issueKey, cloudId }) {
@@ -22,6 +29,7 @@ export async function buildTriageBrief({ issueKey, cloudId }) {
 
   const key = String(issueKey || '').trim().toUpperCase();
   if (!key) return { error: 'Which work item? Give me a key such as PROJ-123.' };
+  if (!isValidIssueKey(key)) return { error: `"${key}" does not look like a work item key (expected PROJ-123).` };
 
   const { issue, error } = await jira.getIssue(key);
   if (error) return { error };
@@ -86,6 +94,7 @@ export async function issuePeople(payload) {
   const twg = createTwgClient(twgRequest);
   const key = String(payload?.issueKey || payload?.context?.jira?.issueKey || '').trim().toUpperCase();
   if (!key) return { error: 'Which work item? Give me a key such as PROJ-123.' };
+  if (!isValidIssueKey(key)) return { error: `"${key}" does not look like a work item key (expected PROJ-123).` };
 
   const { issue, error } = await jira.getIssue(key);
   if (error) return { error };
@@ -181,8 +190,8 @@ export async function getIssueTriage(payload) {
 }
 
 // ---- Jira issue panel resolver ----
-const panelResolver = new Resolver();
-panelResolver.define('getTriage', async (req) => {
+export const panelHandler = makeResolver({
+  getTriage: async (req) => {
   const key = req.payload?.issueKey || req.context?.extension?.issue?.key;
   const brief = await buildTriageBrief({ issueKey: key, cloudId: req.context?.cloudId });
   if (brief.error) return { error: brief.error };
@@ -207,14 +216,14 @@ panelResolver.define('getTriage', async (req) => {
     }
   }
   return { ...brief, suggestedAssignee };
-});
-panelResolver.define('applyPriority', async (req) => {
+  },
+  applyPriority: async (req) => {
   const { issueKey, priority } = req.payload || {};
   if (!issueKey || !priority) return { error: 'issueKey and priority are required.' };
   const jira = createJiraClient(jiraRequest);
   return jira.updateIssue(issueKey, { priority: { name: priority } });
-});
-panelResolver.define('applyLabels', async (req) => {
+  },
+  applyLabels: async (req) => {
   const { issueKey, labels } = req.payload || {};
   if (!issueKey || !Array.isArray(labels)) return { error: 'issueKey and labels are required.' };
   const jira = createJiraClient(jiraRequest);
@@ -223,6 +232,5 @@ panelResolver.define('applyLabels', async (req) => {
   const existing = (issue.fields?.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
   const merged = [...new Set([...existing, ...labels])];
   return jira.updateIssue(issueKey, { labels: merged.map((name) => ({ name })) });
+  },
 });
-
-export const panelHandler = panelResolver.getDefinitions();

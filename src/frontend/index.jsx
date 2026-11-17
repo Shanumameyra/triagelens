@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import ForgeReconciler, { Badge, Box, Button, Heading, Stack, Text, useProductContext } from '@forge/react';
+import ForgeReconciler, { Badge, Box, Button, Heading, Stack, Strong, Text, useProductContext } from '@forge/react';
 import { invoke } from '@forge/bridge';
 
 const BAND_TONE = { Critical: 'red', High: 'orange', Medium: 'yellow', Low: 'green' };
@@ -60,7 +60,7 @@ const App = () => {
       <Text>{brief.summary}</Text>
       <Box>
         <Text>
-          Triage score: <strong>{t.score}/100</strong>
+          Triage score: <Strong>{t.score}/100</Strong>
         </Text>
         <Badge appearance={BAND_TONE[t.band] || 'default'}>{t.band}</Badge>
       </Box>
