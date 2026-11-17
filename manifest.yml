@@ -1,0 +1,111 @@
+modules:
+  jira:issuePanel:
+    - key: triagelens-panel
+      resource: main
+      resolver:
+        function: panel-resolver
+      render: native
+      title: TriageLens
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  rovo:agent:
+    - key: triagelens-guide
+      name: TriageLens Guide
+      description: Answers what to work on first, who should handle an issue, and who has room for more work — from Jira and Teamwork Graph.
+      prompt: resource:agent-prompt;prompt.md
+      conversationStarters:
+        - What should I work on first?
+        - Who is involved in this work item?
+        - Who on my team has room for more work?
+      actions:
+        - triage-brief
+        - issue-people
+        - team-load
+  rovo:mcp:
+    - key: triagelens-mcp
+      name: TriageLens MCP
+      tools:
+        - get-issue-triage
+  action:
+    - key: triage-brief
+      name: Triage brief for an issue
+      function: triageBrief
+      actionVerb: GET
+      description: |
+        Scores one Jira work item 0-100 with a transparent breakdown (priority, staleness,
+        age, recent comments, open blockers, linked goals, assignee load) and suggests a
+        priority and labels. Use it for "how urgent is X", "what should I work on first",
+        or "triage this issue". Leave issueKey empty to use the work item open on screen.
+      inputs:
+        issueKey:
+          title: Work item key
+          type: string
+          required: false
+          description: The Jira work item key, for example PROJ-123.
+    - key: issue-people
+      name: People around a work item
+      function: issuePeople
+      actionVerb: GET
+      description: |
+        For one Jira work item, lists who is assigned, who reported it, who commented in the
+        last 90 days, and any goals the item is linked to. Use it for "who is involved in X"
+        or "who should I ask about X".
+      inputs:
+        issueKey:
+          title: Work item key
+          type: string
+          required: false
+          description: The Jira work item key, for example PROJ-123. Leave empty to use the work item open on screen.
+    - key: team-load
+      name: Team workload
+      function: teamLoad
+      actionVerb: GET
+      description: |
+        For the asker's Atlassian team, lists its members and what each one is assigned,
+        sorted by open load, and names who has the lightest load. Use it for "what is my
+        team working on" or "who has room for more work".
+    - key: get-issue-triage
+      name: Get an issue triage score
+      function: getIssueTriage
+      actionVerb: GET
+      description: >
+        Fetches a Jira issue's triage score (0-100), band, suggested priority and reasons.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The Jira issue key, for example PROJ-123.
+  function:
+    - key: panel-resolver
+      handler: index.panelHandler
+    - key: triageBrief
+      handler: index.triageBrief
+    - key: issuePeople
+      handler: index.issuePeople
+    - key: teamLoad
+      handler: index.teamLoad
+    - key: getIssueTriage
+      handler: index.getIssueTriage
+resources:
+  - key: main
+    path: src/frontend/index.jsx
+  - key: agent-prompt
+    path: prompts
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    - read:graph:issue:jira
+    - read:graph:issue-status:jira
+    - read:graph:issue-comment:jira
+    - read:graph:user:atlassian
+    - read:graph:team:atlassian
+    - read:graph:goal:atlassian
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  # PLACEHOLDER — replaced by `forge create` / `forge register` after Atlassian login.
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
