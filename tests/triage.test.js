@@ -90,7 +90,7 @@ describe('scoreIssue — assignment', () => {
   it('unassigned adds 10 and suggests labels', () => {
     const r = scoreIssue({ ...base, assignee: null });
     assert.equal(r.breakdown.find((b) => b.label === 'Unassigned').points, 10);
-    assert.ok(r.suggestedLabels.includes('triagelens:unassigned'));
+    assert.ok(r.suggestedLabels.includes('triagelens-unassigned'));
     assert.match(r.reasons.join(' '), /Nobody is assigned/);
   });
   it('overloaded assignee (>8 open) subtracts 10', () => {
@@ -121,8 +121,8 @@ describe('scoreIssue — bands and suggestions', () => {
     assert.equal(r.score, 95);
     assert.equal(r.band, 'Critical');
     assert.equal(r.suggestedPriority, 'Highest');
-    assert.ok(r.suggestedLabels.includes('triagelens:critical'));
-    assert.ok(r.suggestedLabels.includes('triagelens:blocked'));
+    assert.ok(r.suggestedLabels.includes('triagelens-critical'));
+    assert.ok(r.suggestedLabels.includes('triagelens-blocked'));
   });
   it('quiet low-priority issue is Low', () => {
     const r = scoreIssue({

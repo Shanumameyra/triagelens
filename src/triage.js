@@ -114,9 +114,10 @@ export function scoreIssue(input = {}) {
   }
 
   const suggestedPriority = band === 'Critical' ? 'Highest' : band === 'High' ? 'High' : band === 'Medium' ? 'Medium' : 'Low';
-  const suggestedLabels = [`triagelens:${band.toLowerCase()}`];
-  if (!hasAssignee) suggestedLabels.push('triagelens:unassigned');
-  if (blockers > 0) suggestedLabels.push('triagelens:blocked');
+  // Hyphenated labels: Jira labels are plain strings, and hyphens are always safe.
+  const suggestedLabels = [`triagelens-${band.toLowerCase()}`];
+  if (!hasAssignee) suggestedLabels.push('triagelens-unassigned');
+  if (blockers > 0) suggestedLabels.push('triagelens-blocked');
 
   return { score, band, breakdown, reasons, suggestedPriority, suggestedLabels };
 }

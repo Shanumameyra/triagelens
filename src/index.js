@@ -231,6 +231,7 @@ export const panelHandler = makeResolver({
   if (error) return { error };
   const existing = (issue.fields?.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
   const merged = [...new Set([...existing, ...labels])];
-  return jira.updateIssue(issueKey, { labels: merged.map((name) => ({ name })) });
+  // Jira's issue API takes labels as an array of plain strings; objects are rejected (HTTP 400).
+  return jira.updateIssue(issueKey, { labels: merged });
   },
 });
